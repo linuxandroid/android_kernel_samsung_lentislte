@@ -60,8 +60,8 @@ define mv-modules
 mdpath=`find $(KERNEL_MODULES_OUT) -type f -name modules.dep`;\
 if [ "$$mdpath" != "" ];then\
 mpath=`dirname $$mdpath`;\
-ko=`find $$mpath/kernel -type f -name *.ko`;\
-for i in $$ko; do mv $$i $(KERNEL_MODULES_OUT)/; done;\
+#ko=`find $$mpath/kernel -type f -name *.ko`;\
+#for i in $$ko; do mv $$i $(KERNEL_MODULES_OUT)/; done;\
 fi
 endef
 
@@ -81,10 +81,10 @@ $(KERNEL_CONFIG): $(KERNEL_OUT)
 $(TARGET_PREBUILT_INT_KERNEL): $(KERNEL_OUT) $(KERNEL_HEADERS_INSTALL)
 	$(hide) rm -rf $(KERNEL_OUT)/arch/$(KERNEL_ARCH)/boot/dts
 	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE)
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) modules
-	$(MAKE) -C kernel O=../$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) INSTALL_MOD_STRIP=1 ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) modules_install
-	$(mv-modules)
-	$(clean-module-folder)
+	#$(MAKE) -C kernel O=../$(KERNEL_OUT) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) modules
+	#$(MAKE) -C kernel O=../$(KERNEL_OUT) INSTALL_MOD_PATH=../../$(KERNEL_MODULES_INSTALL) INSTALL_MOD_STRIP=1 ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) modules_install
+	#$(mv-modules)
+	#$(clean-module-folder)
 
 $(KERNEL_HEADERS_INSTALL): $(KERNEL_OUT)
 	$(hide) rm -f ../$(KERNEL_CONFIG)
