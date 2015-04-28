@@ -1,3 +1,4 @@
-rm -rf ../Modules/*
-find -name '*.ko' -exec cp -av {} ../Modules \;
-        for i in ../Modules/*; do /opt/toolchains/arm-eabi-4.7/bin/arm-eabi-strip --strip-unneeded $i;done;\
+make modules -j4
+rm -rf *.ko
+find -name '*.ko' -exec cp -av {} . \;
+        for i in *.ko; do arm-eabi-strip --strip-unneeded $i;done;\
