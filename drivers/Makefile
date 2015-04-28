@@ -176,3 +176,4 @@ obj-$(CONFIG_MOTOR_DRV_MAX77828)	+= motor/
 obj-$(CONFIG_BATTERY_SAMSUNG)	+= battery/
 
 obj-$(CONFIG_SENSORS_FINGERPRINT)	+= fingerprint/
+obj-y += mhi/
