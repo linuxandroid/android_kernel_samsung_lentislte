@@ -1,4 +1,5 @@
 LOCAL_PATH := $(call my-dir)
+ifneq ($(shell str=$(LOCAL_PATH);echo $${str%%/*}),out)
 include $(CLEAR_VARS)
 LOCAL_MODULE := athdiag
 LOCAL_MODULE_TAGS := optional
@@ -6,3 +7,4 @@ LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../CORE/SERVICES/COMMON
 LOCAL_SHARED_LIBRARIES := libc libcutils
 LOCAL_SRC_FILES := athdiag.c
 include $(BUILD_EXECUTABLE)
+endif
