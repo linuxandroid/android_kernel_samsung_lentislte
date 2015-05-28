@@ -2669,13 +2669,14 @@ static int __init cypress_touchkey_init(void)
 {
 
 	int ret = 0;
-
+/*
 #ifdef CONFIG_SAMSUNG_LPM_MODE
 	if (poweroff_charging) {
 		pr_notice("%s : LPM Charging Mode!!\n", __func__);
 		return 0;
 	}
 #endif
+*/
 
 	ret = i2c_add_driver(&cypress_touchkey_driver);
 	if (ret) {
