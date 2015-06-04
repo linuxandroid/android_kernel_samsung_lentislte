@@ -87,3 +87,4 @@ GTAGS
 
 /dt.img
 /zImage
+!drivers/staging/qcacld-2.0/firmware_bin/*.bin
