@@ -30,11 +30,11 @@
 #include <linux/earlysuspend.h>
 #endif
 
-#define DEBUG_INTELLI_PLUG
-//#undef DEBUG_INTELLI_PLUG
+//#define DEBUG_INTELLI_PLUG
+#undef DEBUG_INTELLI_PLUG
 
-#define INTELLI_PLUG_MAJOR_VERSION	4
-#define INTELLI_PLUG_MINOR_VERSION	0
+#define INTELLI_PLUG_MAJOR_VERSION	3
+#define INTELLI_PLUG_MINOR_VERSION	9
 
 #define DEF_SAMPLING_MS			(268)
 
@@ -52,14 +52,14 @@ static struct delayed_work intelli_plug_boost;
 static struct workqueue_struct *intelliplug_wq;
 static struct workqueue_struct *intelliplug_boost_wq;
 
-static unsigned int intelli_plug_active = 1;
-module_param(intelli_plug_active, uint, 0664);
+static unsigned int intelli_plug_active = 0;
+module_param(intelli_plug_active, uint, 0644);
 
-static unsigned int touch_boost_active = 0;
-module_param(touch_boost_active, uint, 0664);
+static unsigned int touch_boost_active = 1;
+module_param(touch_boost_active, uint, 0644);
 
 static unsigned int nr_run_profile_sel = 0;
-module_param(nr_run_profile_sel, uint, 0664);
+module_param(nr_run_profile_sel, uint, 0644);
 
 //default to something sane rather than zero
 static unsigned int sampling_time = DEF_SAMPLING_MS;
@@ -77,13 +77,11 @@ struct ip_cpu_info {
 static DEFINE_PER_CPU(struct ip_cpu_info, ip_info);
 
 static unsigned int screen_off_max = UINT_MAX;
-module_param(screen_off_max, uint, 0664);
+module_param(screen_off_max, uint, 0644);
 
 #define CAPACITY_RESERVE	50
 
-#if defined(CONFIG_ARCH_APQ8084) || defined(CONFIG_ARM64)
-#define THREAD_CAPACITY (430 - CAPACITY_RESERVE)
-#elif defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_ARCH_APQ8064) || \
+#if defined(CONFIG_ARCH_MSM8960) || defined(CONFIG_ARCH_APQ8064) || \
 defined(CONFIG_ARCH_MSM8974)
 #define THREAD_CAPACITY	(339 - CAPACITY_RESERVE)
 #elif defined(CONFIG_ARCH_MSM8226) || defined (CONFIG_ARCH_MSM8926) || \
@@ -153,10 +151,10 @@ static unsigned int nr_possible_cores;
 module_param(nr_possible_cores, uint, 0444);
 
 static unsigned int cpu_nr_run_threshold = CPU_NR_THRESHOLD;
-module_param(cpu_nr_run_threshold, uint, 0664);
+module_param(cpu_nr_run_threshold, uint, 0644);
 
 static unsigned int nr_run_hysteresis = NR_RUN_HYSTERESIS_QUAD;
-module_param(nr_run_hysteresis, uint, 0664);
+module_param(nr_run_hysteresis, uint, 0644);
 
 static unsigned int nr_run_last;
 
@@ -212,6 +210,12 @@ static void __ref intelli_plug_boost_fn(struct work_struct *work)
 				cpu_up(1);
 }
 
+/*
+static int cmp_nr_running(const void *a, const void *b)
+{
+	return *(unsigned long *)a - *(unsigned long *)b;
+}
+*/
 
 static void update_per_cpu_stat(void)
 {
@@ -335,7 +339,7 @@ static void screen_off_limit(bool on)
 	struct cpufreq_policy *policy;
 	struct ip_cpu_info *l_ip_info;
 
-	// not active, so exit 
+	/* not active, so exit */
 	if (screen_off_max == UINT_MAX)
 		return;
 
@@ -344,7 +348,7 @@ static void screen_off_limit(bool on)
 		policy = cpufreq_cpu_get(0);
 
 		if (on) {
-			// save current instance 
+			/* save current instance */
 			l_ip_info->cur_max = policy->max;
 			policy->max = screen_off_max;
 			policy->cpuinfo.max_freq = screen_off_max;
@@ -353,7 +357,7 @@ static void screen_off_limit(bool on)
 				policy->cpuinfo.max_freq, l_ip_info->sys_max);
 #endif
 		} else {
-			// restore 
+			/* restore */
 			if (cpu != 0) {
 				l_ip_info = &per_cpu(ip_info, 0);
 			}
@@ -386,45 +390,6 @@ void __ref intelli_plug_perf_boost(bool on)
 		}
 	}
 }
-
-// sysfs interface for performance boost (BEGIN) 
-static ssize_t intelli_plug_perf_boost_store(struct kobject *kobj,
-			struct kobj_attribute *attr, const char *buf,
-			size_t count)
-{
-
-	int boost_req;
-
-	sscanf(buf, "%du", &boost_req);
-
-	switch(boost_req) {
-		case 0:
-			intelli_plug_perf_boost(0);
-			return count;
-		case 1:
-			intelli_plug_perf_boost(1);
-			return count;
-		default:
-			return -EINVAL;
-	}
-}
-
-static struct kobj_attribute intelli_plug_perf_boost_attribute =
-	__ATTR(perf_boost, 0220,
-		NULL,
-		intelli_plug_perf_boost_store);
-
-static struct attribute *intelli_plug_perf_boost_attrs[] = {
-	&intelli_plug_perf_boost_attribute.attr,
-	NULL,
-};
-
-static struct attribute_group intelli_plug_perf_boost_attr_group = {
-	.attrs = intelli_plug_perf_boost_attrs,
-};
-
-static struct kobject *intelli_plug_perf_boost_kobj;
-// sysfs interface for performance boost (END)
 
 #ifdef CONFIG_POWERSUSPEND
 static void intelli_plug_suspend(struct power_suspend *handler)
@@ -499,7 +464,7 @@ static struct power_suspend intelli_plug_power_suspend_driver = {
 	.suspend = intelli_plug_suspend,
 	.resume = intelli_plug_resume,
 };
-#endif  // CONFIG_POWERSUSPEND
+#endif  /* CONFIG_POWERSUSPEND */
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static struct early_suspend intelli_plug_early_suspend_driver = {
@@ -507,7 +472,7 @@ static struct early_suspend intelli_plug_early_suspend_driver = {
         .suspend = intelli_plug_suspend,
         .resume = intelli_plug_resume,
 };
-#endif	// CONFIG_HAS_EARLYSUSPEND
+#endif	/* CONFIG_HAS_EARLYSUSPEND */
 
 static void intelli_plug_input_event(struct input_handle *handle,
 		unsigned int type, unsigned int code, int value)
@@ -564,14 +529,14 @@ static const struct input_device_id intelli_plug_ids[] = {
 		.absbit = { [BIT_WORD(ABS_MT_POSITION_X)] =
 			    BIT_MASK(ABS_MT_POSITION_X) |
 			    BIT_MASK(ABS_MT_POSITION_Y) },
-	}, // multi-touch touchscreen 
+	}, /* multi-touch touchscreen */
 	{
 		.flags = INPUT_DEVICE_ID_MATCH_KEYBIT |
 			 INPUT_DEVICE_ID_MATCH_ABSBIT,
 		.keybit = { [BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH) },
 		.absbit = { [BIT_WORD(ABS_X)] =
 			    BIT_MASK(ABS_X) | BIT_MASK(ABS_Y) },
-	}, // touchpad 
+	}, /* touchpad */
 	{ },
 };
 
@@ -628,19 +593,6 @@ int __init intelli_plug_init(void)
 	queue_delayed_work_on(0, intelliplug_wq, &intelli_plug_work,
 		msecs_to_jiffies(10));
 
-	intelli_plug_perf_boost_kobj
-		= kobject_create_and_add("intelli_plug", kernel_kobj);
-
-	if (!intelli_plug_perf_boost_kobj) {
-		return -ENOMEM;
-	}
-
-	rc = sysfs_create_group(intelli_plug_perf_boost_kobj,
-				&intelli_plug_perf_boost_attr_group);
-
-	if (rc)
-		kobject_put(intelli_plug_perf_boost_kobj);
-
 	return 0;
 }
 
@@ -650,3 +602,4 @@ MODULE_DESCRIPTION("'intell_plug' - An intelligent cpu hotplug driver for "
 MODULE_LICENSE("GPL");
 
 late_initcall(intelli_plug_init);
+
