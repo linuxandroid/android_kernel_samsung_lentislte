@@ -51,8 +51,7 @@ defined (CONFIG_ARCH_MSM8610) || defined (CONFIG_ARCH_MSM8228)
 #else
 #define THREAD_CAPACITY			(250 - CAPACITY_RESERVE)
 #endif
-#define CPU_NR_THRESHOLD		((THREAD_CAPACITY << 1) + \
-					(THREAD_CAPACITY / 2))
+#define CPU_NR_THRESHOLD		((THREAD_CAPACITY << 1) + (THREAD_CAPACITY / 2))
 #define MULT_FACTOR			4
 #define DIV_FACTOR			100000
 
@@ -75,7 +74,7 @@ struct ip_cpu_info {
 static DEFINE_PER_CPU(struct ip_cpu_info, ip_info);
 
 /* HotPlug Driver controls */
-static atomic_t intelli_plug_active = ATOMIC_INIT(0);
+static atomic_t intelli_plug_active = ATOMIC_INIT(0);    // default deatctived
 static unsigned int cpus_boosted = DEFAULT_NR_CPUS_BOOSTED;
 static unsigned int min_cpus_online = DEFAULT_MIN_CPUS_ONLINE;
 static unsigned int max_cpus_online = DEFAULT_MAX_CPUS_ONLINE;
@@ -249,8 +248,7 @@ static void __ref cpu_up_down_work(struct work_struct *work)
 
 	if (target < online_cpus) {
 		if (online_cpus <= cpus_boosted &&
-		    (ktime_to_us(ktime_get()) - last_input <
-				boost_lock_duration))
+		    (ktime_to_us(ktime_get()) - last_input < boost_lock_duration))
 			return;
 
 		update_per_cpu_stat();
@@ -259,9 +257,7 @@ static void __ref cpu_up_down_work(struct work_struct *work)
 				continue;
 			if (check_down_lock(cpu))
 				break;
-			l_nr_threshold =
-				cpu_nr_run_threshold << 1 /
-					(num_online_cpus());
+			l_nr_threshold = cpu_nr_run_threshold << 1 / (num_online_cpus());
 			l_ip_info = &per_cpu(ip_info, cpu);
 			if (l_ip_info->cpu_nr_running < l_nr_threshold)
 				cpu_down(cpu);
