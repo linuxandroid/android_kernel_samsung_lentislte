@@ -94,4 +94,4 @@ signing_key.x509
 x509.genkey
 
 !drivers/staging/qcacld-2.0/firmware_bin/*.bin
-
+out/
