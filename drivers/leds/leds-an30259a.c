@@ -237,13 +237,13 @@ static void an30259a_led_brightness_work(struct work_struct *work)
 /*
  * leds_set_slope_mode() sets correct values to corresponding shadow registers.
  * led: stands for LED_R or LED_G or LED_B.
- * delay: represents for starting delay time in multiple of .5 second.
- * dutymax: led at slope lighting maximum PWM Duty setting.
+ * delay: represents for starting delay time in multiple of .5 second. [0..4] 16*0.5 = 8sec
+ * dutymax: led at slope lighting maximum PWM Duty setting. [0..4][0000]  (0,8,16,24,...)/128 = (0%,6.25%,12.5%,...,93.75%)
  * dutymid: led at slope lighting middle PWM Duty setting.
  * dutymin: led at slope lighting minimum PWM Duty Setting.
- * slptt1: total time of slope operation 1 and 2, in multiple of .5 second.
+ * slptt1: total time of slope operation 1 and 2, in multiple of .5 second. [0..3] (16*0.5)=8sec 
  * slptt2: total time of slope operation 3 and 4, in multiple of .5 second.
- * dt1: detention time at each step in slope operation 1, in multiple of 4ms.
+ * dt1: detention time at each step in slope operation 1, in multiple of 4ms. [0..3] 16*4ms = 64ms
  * dt2: detention time at each step in slope operation 2, in multiple of 4ms.
  * dt3: detention time at each step in slope operation 3, in multiple of 4ms.
  * dt4: detention time at each step in slope operation 4, in multiple of 4ms.
@@ -254,7 +254,7 @@ static void leds_set_slope_mode(struct i2c_client *client,
 				u8 slptt1, u8 slptt2,
 				u8 dt1, u8 dt2, u8 dt3, u8 dt4)
 {
-	struct an30259a_data *data = i2c_get_clientdata(client);
+	struct an30259a_data *data = i2c_get_clientdata(client);	
 
 	data->shadow_reg[AN30259A_REG_LED1CNT1 + led * 4] =
 							dutymax << 4 | dutymid;
@@ -435,12 +435,12 @@ static void an30259a_set_led_blink(enum an30259a_led_enum led,
 	} else
 		leds_on(led, true, true, brightness);
 
-	leds_set_slope_mode(client, led, 0, 15, 15, 0,
+	leds_set_slope_mode(client, led, 0, 15, 8, 0,
 				(delay_on_time + AN30259A_TIME_UNIT - 1) /
 				AN30259A_TIME_UNIT,
 				(delay_off_time + AN30259A_TIME_UNIT - 1) /
 				AN30259A_TIME_UNIT,
-				0, 0, 0, 0);
+				2, 2, 2, 2);
 }
 
 static ssize_t store_an30259a_led_lowpower(struct device *dev,
@@ -552,6 +552,45 @@ static ssize_t store_an30259a_led_blink(struct device *dev,
 	return count;
 }
 
+static ssize_t store_an30259a_led_slop(struct device *dev,
+					struct device_attribute *devattr,
+					const char *buf, size_t count)
+{
+	int retval;
+	int led, delay;
+	int dutymax,  dutymid,  dutymin;
+	int slptt1,  slptt2;
+	int dt1,  dt2,  dt3,  dt4;
+	struct i2c_client *client;
+	client = b_client;
+	
+
+	retval = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d", &led, &delay,
+				 &dutymax,  &dutymid,  &dutymin,
+				 &slptt1,  &slptt2,
+				 &dt1,  &dt2,  &dt3,  &dt4);
+
+	if (retval == 0) {
+		printk(KERN_WARNING "fail to get led_slop value.\n");
+		return count;
+	}
+	
+	/*Reset an30259a*/
+	an30259a_start_led_pattern(LED_OFF);
+	
+	leds_on(led, true, true, LED_DYNAMIC_CURRENT);	
+	leds_set_slope_mode(client, led, delay,
+				 dutymax,  dutymid,  dutymin,
+				 slptt1,  slptt2,
+				 dt1,  dt2,  dt3,  dt4);
+	// echo 1 0 15 8 0 5 5 2 2 2 2 > led_slop
+	retval = leds_i2c_write_all(client);
+	if (retval){
+		printk(KERN_WARNING "leds_i2c_write_all failed\n");
+	}
+
+	return count;
+}
 
 static ssize_t store_led_r(struct device *dev,
 	struct device_attribute *devattr, const char *buf, size_t count)
@@ -733,6 +772,8 @@ static DEVICE_ATTR(led_pattern, 0664, NULL, \
 					store_an30259a_led_pattern);
 static DEVICE_ATTR(led_blink, 0664, NULL, \
 					store_an30259a_led_blink);
+static DEVICE_ATTR(led_slop, 0664, NULL, \
+					store_an30259a_led_slop);
 static DEVICE_ATTR(led_br_lev, 0664, NULL, \
 					store_an30259a_led_br_lev);
 static DEVICE_ATTR(led_lowpower, 0664, NULL, \
@@ -758,6 +799,7 @@ static struct attribute *sec_led_attributes[] = {
 	&dev_attr_led_b.attr,
 	&dev_attr_led_pattern.attr,
 	&dev_attr_led_blink.attr,
+	&dev_attr_led_slop.attr,
 	&dev_attr_led_br_lev.attr,
 	&dev_attr_led_lowpower.attr,
 	NULL,
