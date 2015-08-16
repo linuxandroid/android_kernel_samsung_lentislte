@@ -327,7 +327,7 @@ bool sec_bat_check_callback(struct sec_battery_info *battery)
 			/* check the adc from vf pin */
 			qpnp_vadc_read(adc_client, P_MUX8_1_3, &result);
 			data = ((int)result.physical) / 1000;
-			pr_info("%s: (%dmV) is connected.\n",
+			pr_debug("%s: (%dmV) is connected.\n",
 					__func__, data);
 #if defined(CONFIG_MACH_TRLTE_ATT) || defined(CONFIG_MACH_TRLTE_SPR) || \
 			defined(CONFIG_MACH_TRLTE_TMO) || defined(CONFIG_MACH_TRLTE_USC) || \

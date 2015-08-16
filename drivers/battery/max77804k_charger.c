@@ -446,14 +446,14 @@ static int max77804k_get_input_current(struct max77804k_charger_data *charger)
 	if (charger->cable_type == POWER_SUPPLY_TYPE_WIRELESS) {
 		max77804k_read_reg(charger->max77804k->i2c,
 				MAX77804K_CHG_REG_CHG_CNFG_10, &reg_data);
-		pr_info("%s: CHG_CNFG_10(0x%02x)\n", __func__, reg_data);
+		pr_debug("%s: CHG_CNFG_10(0x%02x)\n", __func__, reg_data);
 		/* AND operation for removing the formal 2bit  */
 		reg_data = reg_data & 0x3F;
 		charger->input_curr_limit_step = 20;
 	} else {
 		max77804k_read_reg(charger->max77804k->i2c,
 				MAX77804K_CHG_REG_CHG_CNFG_09, &reg_data);
-		pr_info("%s: CHG_CNFG_09(0x%02x)\n", __func__, reg_data);
+		pr_debug("%s: CHG_CNFG_09(0x%02x)\n", __func__, reg_data);
 		/* AND operation for removing the formal 1bit  */
 		reg_data = reg_data & 0x7F;
 		if (charger->pmic_ver == 0x04)
@@ -672,36 +672,36 @@ static int max77804k_get_health_state(struct max77804k_charger_data *charger)
 
 	reg_data = ((reg_data & MAX77804K_BAT_DTLS) >> MAX77804K_BAT_DTLS_SHIFT);
 
-	pr_info("%s: bat_dtls(0x%x) int_mask(0x%x)\n", __func__, reg_data, chg_int_mask);
+	pr_debug("%s: bat_dtls(0x%x) int_mask(0x%x)\n", __func__, reg_data, chg_int_mask);
 	switch (reg_data) {
 	case 0x00:
-		pr_info("%s: No battery and the charger is suspended\n",
+		pr_debug("%s: No battery and the charger is suspended\n",
 			__func__);
 		state = POWER_SUPPLY_HEALTH_UNSPEC_FAILURE;
 		break;
 	case 0x01:
-		pr_info("%s: battery is okay "
+		pr_debug("%s: battery is okay "
 			"but its voltage is low(~VPQLB)\n", __func__);
 		state = POWER_SUPPLY_HEALTH_GOOD;
 		break;
 	case 0x02:
-		pr_info("%s: battery dead\n", __func__);
+		pr_debug("%s: battery dead\n", __func__);
 		state = POWER_SUPPLY_HEALTH_DEAD;
 		break;
 	case 0x03:
 		state = POWER_SUPPLY_HEALTH_GOOD;
 		break;
 	case 0x04:
-		pr_info("%s: battery is okay" \
+		pr_debug("%s: battery is okay" \
 			"but its voltage is low\n", __func__);
 		state = POWER_SUPPLY_HEALTH_GOOD;
 		break;
 	case 0x05:
-		pr_info("%s: battery ovp\n", __func__);
+		pr_debug("%s: battery ovp\n", __func__);
 		state = POWER_SUPPLY_HEALTH_OVERVOLTAGE;
 		break;
 	default:
-		pr_info("%s: battery unknown : 0x%d\n", __func__, reg_data);
+		pr_debug("%s: battery unknown : 0x%d\n", __func__, reg_data);
 		state = POWER_SUPPLY_HEALTH_UNKNOWN;
 		break;
 	}
@@ -735,18 +735,18 @@ static int max77804k_get_health_state(struct max77804k_charger_data *charger)
 			max77804k_read_reg(charger->max77804k->i2c,
 					MAX77804K_CHG_REG_CHG_CNFG_12, &chg_cnfg_12);
 
-			pr_info("%s: CHG_DTLS_00(0x%x), CHG_DTLS_01(0x%x), CHG_CNFG_00(0x%x)\n",
+			pr_debug("%s: CHG_DTLS_00(0x%x), CHG_DTLS_01(0x%x), CHG_CNFG_00(0x%x)\n",
 					__func__, chg_dtls_00, chg_dtls, chg_cnfg_00);
-			pr_info("%s:  CHG_CNFG_01(0x%x), CHG_CNFG_02(0x%x), CHG_CNFG_04(0x%x)\n",
+			pr_debug("%s:  CHG_CNFG_01(0x%x), CHG_CNFG_02(0x%x), CHG_CNFG_04(0x%x)\n",
 					__func__, chg_cnfg_01, chg_cnfg_02, chg_cnfg_04);
-			pr_info("%s:  CHG_CNFG_09(0x%x), CHG_CNFG_12(0x%x)\n",
+			pr_debug("%s:  CHG_CNFG_09(0x%x), CHG_CNFG_12(0x%x)\n",
 					__func__, chg_cnfg_09, chg_cnfg_12);
 		}
 
-		pr_info("%s: vbus_state : 0x%d, chg_dtls : 0x%d\n", __func__, vbus_state, chg_dtls);
+		pr_debug("%s: vbus_state : 0x%d, chg_dtls : 0x%d\n", __func__, vbus_state, chg_dtls);
 		/*  OVP is higher priority */
 		if (vbus_state == 0x02) { /*  CHGIN_OVLO */
-			pr_info("%s: vbus ovp\n", __func__);
+			pr_debug("%s: vbus ovp\n", __func__);
 			state = POWER_SUPPLY_HEALTH_OVERVOLTAGE;
 			if (charger->cable_type == POWER_SUPPLY_TYPE_WIRELESS) {
 				retry_cnt = 0;
@@ -764,7 +764,7 @@ static int max77804k_get_health_state(struct max77804k_charger_data *charger)
 				(chg_cnfg_00 & MAX77804K_MODE_BUCK) && \
 				(chg_cnfg_00 & MAX77804K_MODE_CHGR) && \
 				(charger->cable_type != POWER_SUPPLY_TYPE_WIRELESS)) {
-			pr_info("%s: vbus is under\n", __func__);
+			pr_debug("%s: vbus is under\n", __func__);
 			state = POWER_SUPPLY_HEALTH_UNDERVOLTAGE;
 		} else if((value.intval == POWER_SUPPLY_HEALTH_UNDERVOLTAGE) && \
 				!((vbus_state == 0x0) || (vbus_state == 0x01))){
@@ -773,7 +773,7 @@ static int max77804k_get_health_state(struct max77804k_charger_data *charger)
 		}
 
 		if (chg_int_mask & MAX77804K_WCIN_IM) {
-			pr_info("%s: unmask wcin int\n", __func__);
+			pr_debug("%s: unmask wcin int\n", __func__);
 			max77804k_update_reg(charger->max77804k->i2c,
 				MAX77804K_CHG_REG_CHG_INT_MASK, 0, MAX77804K_WCIN_IM);
 		}
@@ -795,7 +795,7 @@ static int sec_chg_get_property(struct power_supply *psy,
 		val->intval = POWER_SUPPLY_TYPE_BATTERY;
 		if (max77804k_read_reg(charger->max77804k->i2c,
 			MAX77804K_CHG_REG_CHG_INT_OK, &reg_data) == 0) {
-			pr_info("%s: reg_data(%d)\n", __func__, reg_data);
+			//pr_info("%s: reg_data(%d)\n", __func__, reg_data);
 			if (reg_data & MAX77804K_WCIN_OK) {
 				val->intval = POWER_SUPPLY_TYPE_WIRELESS;
 				charger->wc_w_state = 1;
